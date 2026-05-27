@@ -1,0 +1,75 @@
+{
+  "expo": {
+    "name": "أكشن يابني",
+    "slug": "movie-game",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D0D1A"
+    },
+    "androidNavigationBar": {
+      "visible": "immersive"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.dibootech.actionyabny",
+      "requireFullScreen": true,
+      "infoPlist": {
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait"
+        ],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0D0D1A"
+      },
+      "splash": {
+        "image": "./assets/icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#0D0D1A"
+      },
+      "package": "com.dibootech.actionyabny",
+      "softwareKeyboardLayoutMode": "pan",
+      "statusBar": {
+        "backgroundColor": "#0D0D1A",
+        "style": "light",
+        "translucent": true
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0D0D1A",
+          "image": "./assets/icon.png",
+          "imageWidth": 200,
+          "dark": {
+            "backgroundColor": "#0D0D1A"
+          }
+        }
+      ]
+    ],
+    "scheme": "moviegame",
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "2d0676fe-4114-4870-8c89-5677c89292df"
+      }
+    }
+  }
+}
