@@ -10,6 +10,9 @@ module.exports = function (api) {
           alias: { '@': './src' },
         },
       ],
+      // NOTE: react-native-reanimated was removed in favour of React Native's
+      // built-in Animated + PanResponder, which work with Expo Go out of the
+      // box and require no native build step.
     ],
   };
 };

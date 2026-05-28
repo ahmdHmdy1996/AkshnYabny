@@ -1,3 +1,3 @@
-import { SetupScreen } from '../src/screens/SetupScreen';
+import { WelcomeScreen } from '../src/screens/WelcomeScreen';
 
-export default SetupScreen;
+export default WelcomeScreen;
