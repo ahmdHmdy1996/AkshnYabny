@@ -69,8 +69,6 @@ const styles = StyleSheet.create({
     ...Typography.label,
     color: Colors.textTertiary,
     textAlign: 'right',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
   },
   row: {
     flexDirection: 'row',

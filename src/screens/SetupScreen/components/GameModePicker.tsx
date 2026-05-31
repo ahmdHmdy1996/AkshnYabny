@@ -65,15 +65,11 @@ export const GameModePicker: React.FC<GameModePickerProps> = ({ value, onChange 
 const styles = StyleSheet.create({
   wrapper: {
     gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
   },
   heading: {
     ...Typography.label,
     color: Colors.textTertiary,
     textAlign: 'right',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
     marginBottom: Spacing.xs,
   },
   pillRow: {
@@ -118,8 +114,7 @@ const styles = StyleSheet.create({
   hint: {
     ...Typography.caption,
     color: Colors.textTertiary,
-    textAlign: 'center',
-    letterSpacing: 0.3,
+    textAlign: 'right',
     marginTop: -Spacing.xs,
   },
 });
