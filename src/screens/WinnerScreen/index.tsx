@@ -1,3 +1,15 @@
+/**
+ * WinnerScreen — CINEMA ROYALE edition
+ *
+ * New visual elements:
+ *   • Gold particle burst — 16 shards explode outward from the trophy
+ *   • Void-black background with intense amber gold beam at top
+ *   • Trophy springs in with dramatic overshoot spring
+ *   • Winner name in bright gold with gold glow shadow
+ *   • Score chips use emerald highlight for the winner
+ *   • CTA uses solid gold gradient — the biggest moment in the game
+ */
+
 import React, { useEffect, useRef } from 'react';
 import {
   View,
@@ -10,14 +22,77 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+
+import { useAudioPlayer } from 'expo-audio';
 import { useGameStore } from '../../store/useGameStore';
 import { Colors, Spacing, BorderRadius, Typography, Shadow } from '../../constants/theme';
 import { successFeedback, lightImpact } from '../../utils/haptics';
-import { playCheerSound } from '../../utils/audio';
+
+// ─── Particle burst config ─────────────────────────────────────────────────────
+
+const NUM_PARTICLES = 16;
+
+// Pre-compute particle end positions (radiating outward from center)
+const BURST_DATA = Array.from({ length: NUM_PARTICLES }, (_, i) => {
+  const angle = (i / NUM_PARTICLES) * 2 * Math.PI - Math.PI / 2; // start at top
+  const dist  = i % 2 === 0 ? 115 : 88;
+  return {
+    id:    i,
+    dx:    Math.round(Math.cos(angle) * dist),
+    dy:    Math.round(Math.sin(angle) * dist),
+    size:  ([7, 4, 6, 3] as const)[i % 4],
+    delay: i * 38,
+    color: (['#FFD340', '#FFB800', '#FFC420', '#F5A800'] as const)[i % 4],
+  };
+});
+
+function BurstParticle({
+  dx, dy, size, delay, color,
+}: typeof BURST_DATA[0]) {
+  const x       = useRef(new Animated.Value(0)).current;
+  const y       = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const scale   = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(x, { toValue: dx, duration: 950, useNativeDriver: true }),
+        Animated.timing(y, { toValue: dy, duration: 950, useNativeDriver: true }),
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(opacity, { toValue: 1,   duration: 180, useNativeDriver: true }),
+            Animated.spring(scale,   { toValue: 1, tension: 200, friction: 6, useNativeDriver: true }),
+          ]),
+          Animated.timing(opacity, { toValue: 0, duration: 770, useNativeDriver: true }),
+        ]),
+      ]).start();
+    }, delay);
+    return () => clearTimeout(timer);
+  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: color,
+        opacity,
+        transform: [{ translateX: x }, { translateY: y }, { scale }],
+      }}
+    />
+  );
+}
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export function WinnerScreen() {
   const router = useRouter();
-  const { teamA, teamB, resetGame } = useGameStore();
+  const { teamA, teamB, resetGame, isSoundEnabled } = useGameStore();
+  const cheerPlayer = useAudioPlayer(require('../../../assets/sounds/cheer.mp3'));
 
   const winner =
     teamA.score > teamB.score ? teamA :
@@ -27,48 +102,53 @@ export function WinnerScreen() {
   const isTie = winner === null;
 
   // ── Entrance animations ──────────────────────────────────────────────────
-  const headerOpacity = useRef(new Animated.Value(0)).current;
-  const headerTranslateY = useRef(new Animated.Value(-30)).current;
-  const nameScale = useRef(new Animated.Value(0.5)).current;
-  const nameOpacity = useRef(new Animated.Value(0)).current;
-  const footerOpacity = useRef(new Animated.Value(0)).current;
+  const headerOpacity    = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(-36)).current;
+  const trophyScale      = useRef(new Animated.Value(0.2)).current;
+  const trophyOpacity    = useRef(new Animated.Value(0)).current;
+  const nameScale        = useRef(new Animated.Value(0.55)).current;
+  const nameOpacity      = useRef(new Animated.Value(0)).current;
+  const footerOpacity    = useRef(new Animated.Value(0)).current;
 
-  // ── Trophy pulse loop ────────────────────────────────────────────────────
-  const trophyScale = useRef(new Animated.Value(1)).current;
+  // Trophy idle pulse (runs after entrance)
+  const idlePulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Celebratory haptic + cheer sound fire the moment the winner is revealed
     isTie ? lightImpact() : successFeedback();
-    if (!isTie) playCheerSound();
+    if (!isTie && isSoundEnabled) {
+      try { cheerPlayer.seekTo(0); cheerPlayer.play(); } catch { /* ignore */ }
+    }
 
-    // Staggered entrance sequence
     Animated.sequence([
-      // 1. Header fades down in
+      // 1. Header drops in
       Animated.parallel([
-        Animated.timing(headerOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.spring(headerTranslateY, { toValue: 0, tension: 70, friction: 8, useNativeDriver: true }),
+        Animated.timing(headerOpacity,    { toValue: 1, duration: 480, useNativeDriver: true }),
+        Animated.spring(headerTranslateY, { toValue: 0, tension: 72, friction: 8, useNativeDriver: true }),
       ]),
-      // 2. Winner name pops in with spring
+      // 2. Trophy bursts in with dramatic overshoot
       Animated.parallel([
-        Animated.spring(nameScale, { toValue: 1, tension: 60, friction: 6, useNativeDriver: true }),
+        Animated.spring(trophyScale,   { toValue: 1, tension: 50, friction: 5, useNativeDriver: true }),
+        Animated.timing(trophyOpacity, { toValue: 1, duration: 280, useNativeDriver: true }),
+      ]),
+      // 3. Winner name springs in
+      Animated.parallel([
+        Animated.spring(nameScale,   { toValue: 1, tension: 60, friction: 6, useNativeDriver: true }),
         Animated.timing(nameOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
       ]),
-      // 3. Footer slides up
-      Animated.timing(footerOpacity, { toValue: 1, duration: 400, delay: 100, useNativeDriver: true }),
-    ]).start();
-
-    // Trophy pulse runs independently, starts after a short delay
-    const pulseTimer = setTimeout(() => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(trophyScale, { toValue: 1.18, duration: 700, useNativeDriver: true }),
-          Animated.timing(trophyScale, { toValue: 1,    duration: 700, useNativeDriver: true }),
-        ])
-      ).start();
-    }, 600);
-
-    return () => clearTimeout(pulseTimer);
-  }, [headerOpacity, headerTranslateY, nameScale, nameOpacity, footerOpacity, trophyScale]);
+      // 4. Footer fades in
+      Animated.timing(footerOpacity, { toValue: 1, duration: 380, useNativeDriver: true }),
+    ]).start(() => {
+      // 5. Gentle idle pulse on the trophy, starts 400 ms after reveal
+      setTimeout(() => {
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(idlePulse, { toValue: 1.14, duration: 750, useNativeDriver: true }),
+            Animated.timing(idlePulse, { toValue: 1.00, duration: 750, useNativeDriver: true }),
+          ])
+        ).start();
+      }, 400);
+    });
+  }, []);
 
   const handleNewGame = () => {
     resetGame();
@@ -79,21 +159,21 @@ export function WinnerScreen() {
     <View style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* Cinematic background */}
+      {/* ── Void black + warm gold shift ────────────────────────────────── */}
       <LinearGradient
-        colors={['#0D0D1A', '#1F1200', '#0D0D1A']}
+        colors={['#04050C', '#0E0900', '#04050C']}
         locations={[0, 0.5, 1]}
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Intense gold glow behind trophy */}
-      <View style={styles.glowBurst} />
-      <View style={styles.glowLower} />
+      {/* ── Gold burst blob behind trophy ───────────────────────────────── */}
+      <View style={styles.glowBurst} pointerEvents="none" />
+      <View style={styles.glowLower} pointerEvents="none" />
 
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.layout}>
 
-          {/* ── Header ───────────────────────────────────────── */}
+          {/* ── Header ───────────────────────────────────────────────────── */}
           <Animated.View
             style={[
               styles.header,
@@ -108,16 +188,32 @@ export function WinnerScreen() {
             </Text>
           </Animated.View>
 
-          {/* ── Trophy + Winner ──────────────────────────────── */}
-          <View style={styles.center}>
-            {/* Pulsating trophy */}
-            <Animated.Text
-              style={[styles.trophy, { transform: [{ scale: trophyScale }] }]}
-            >
-              🏆
-            </Animated.Text>
+          {/* ── Trophy + particle burst + winner name ────────────────────── */}
+          <View style={styles.centerSection}>
 
-            {/* Winner name */}
+            {/* Trophy — particles burst from its center */}
+            <View style={styles.trophyWrapper}>
+              <Animated.Text
+                style={[
+                  styles.trophy,
+                  { opacity: trophyOpacity, transform: [{ scale: Animated.multiply(trophyScale, idlePulse) }] },
+                ]}
+              >
+                🏆
+              </Animated.Text>
+
+              {/* Absolute overlay fills the trophy bounds; flex-centered inner
+                  anchor is where particles originate */}
+              <View style={styles.particleOverlay} pointerEvents="none">
+                <View>
+                  {BURST_DATA.map((p) => (
+                    <BurstParticle key={p.id} {...p} />
+                  ))}
+                </View>
+              </View>
+            </View>
+
+            {/* Winner name card */}
             <Animated.View
               style={[
                 styles.winnerCard,
@@ -131,7 +227,11 @@ export function WinnerScreen() {
               ) : (
                 <>
                   <Text style={styles.winnerEyebrow}>بطل اللعبة</Text>
-                  <Text style={styles.winnerName} adjustsFontSizeToFit numberOfLines={2}>
+                  <Text
+                    style={styles.winnerName}
+                    adjustsFontSizeToFit
+                    numberOfLines={2}
+                  >
                     {winner!.name}
                   </Text>
                 </>
@@ -140,7 +240,10 @@ export function WinnerScreen() {
 
             {/* Final score summary */}
             <Animated.View style={[styles.scoreRow, { opacity: nameOpacity }]}>
-              <View style={styles.scoreChip}>
+              <View style={[
+                styles.scoreChip,
+                teamA.score > teamB.score && styles.scoreChipWinner,
+              ]}>
                 <Text style={styles.scoreChipName} numberOfLines={1}>
                   {teamA.name}
                 </Text>
@@ -154,7 +257,10 @@ export function WinnerScreen() {
 
               <Text style={styles.scoreSep}>–</Text>
 
-              <View style={styles.scoreChip}>
+              <View style={[
+                styles.scoreChip,
+                teamB.score > teamA.score && styles.scoreChipWinner,
+              ]}>
                 <Text style={styles.scoreChipName} numberOfLines={1}>
                   {teamB.name}
                 </Text>
@@ -168,20 +274,22 @@ export function WinnerScreen() {
             </Animated.View>
           </View>
 
-          {/* ── New Game Button ───────────────────────────────── */}
+          {/* ── New Game CTA ──────────────────────────────────────────────── */}
           <Animated.View style={{ opacity: footerOpacity }}>
             <TouchableOpacity
               onPress={handleNewGame}
-              activeOpacity={0.8}
+              activeOpacity={0.80}
               style={[styles.newGameWrapper, Shadow.gold]}
             >
               <LinearGradient
-                colors={[Colors.goldLight, Colors.gold, '#8B6914']}
+                colors={[Colors.goldLight, Colors.gold, Colors.goldDeep]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.newGameGradient}
               >
-                <Text style={styles.newGameText}>لعب جيم جديد  🔄</Text>
+                {/* Top shimmer */}
+                <View style={styles.newGameShimmer} />
+                <Text style={styles.newGameText}>لعبة جديدة  🔄</Text>
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
@@ -208,25 +316,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 
-  // ── Glow decoration
+  // ── Glow blobs
   glowBurst: {
     position: 'absolute',
-    top: '20%',
+    top: '18%',
     alignSelf: 'center',
-    width: 340,
-    height: 340,
-    borderRadius: 170,
-    backgroundColor: 'rgba(201, 168, 76, 0.18)',
-    transform: [{ scaleX: 1.6 }],
+    width: 360,
+    height: 360,
+    borderRadius: 180,
+    backgroundColor: 'rgba(255, 184, 0, 0.16)',
+    transform: [{ scaleX: 1.7 }],
   },
   glowLower: {
     position: 'absolute',
-    bottom: '10%',
+    bottom: '12%',
     alignSelf: 'center',
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: 'rgba(120, 60, 220, 0.08)',
+    backgroundColor: 'rgba(100, 55, 220, 0.07)',
   },
 
   // ── Header
@@ -242,17 +350,36 @@ const styles = StyleSheet.create({
   headerSub: {
     ...Typography.body,
     color: Colors.textSecondary,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     textAlign: 'center',
   },
 
-  // ── Trophy
-  center: {
+  // ── Center section
+  centerSection: {
     alignItems: 'center',
     gap: Spacing.lg,
   },
+
+  // ── Trophy wrapper — relative container for the particle overlay
+  trophyWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── Particle overlay — fills trophyWrapper, centers the burst origin
+  particleOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── Trophy
   trophy: {
-    fontSize: 96,
+    fontSize: 100,
     textAlign: 'center',
   },
 
@@ -265,16 +392,20 @@ const styles = StyleSheet.create({
   winnerEyebrow: {
     ...Typography.label,
     color: Colors.gold,
-    letterSpacing: 2.5,
+    letterSpacing: 3,
     textTransform: 'uppercase',
   },
   winnerName: {
-    fontSize: 52,
+    fontSize: 54,
     fontWeight: '900',
     color: Colors.goldLight,
     textAlign: 'center',
-    letterSpacing: 0.5,
-    lineHeight: 62,
+    letterSpacing: 0.3,
+    lineHeight: 64,
+    // Warm gold text glow
+    textShadowColor: 'rgba(255, 184, 0, 0.45)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20,
   },
   tieLabel: {
     ...Typography.displayMedium,
@@ -282,7 +413,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // ── Score summary row
+  // ── Score summary
   scoreRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -298,7 +429,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.borderSubtle,
     backgroundColor: Colors.glass,
     gap: 2,
-    minWidth: 80,
+    minWidth: 84,
+  },
+  scoreChipWinner: {
+    borderColor: Colors.goldBorder,
+    backgroundColor: Colors.goldDim,
   },
   scoreChipName: {
     ...Typography.caption,
@@ -306,10 +441,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   scoreChipNum: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '800',
     color: Colors.textSecondary,
-    lineHeight: 32,
+    lineHeight: 34,
   },
   scoreChipNumWinner: {
     color: Colors.goldLight,
@@ -325,15 +460,23 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   newGameGradient: {
-    paddingVertical: 17,
+    paddingVertical: 18,
     paddingHorizontal: Spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  newGameShimmer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.28)',
+  },
   newGameText: {
     ...Typography.subtitle,
     color: Colors.background,
-    fontWeight: '700',
+    fontWeight: '800',
     letterSpacing: 0.8,
   },
 });

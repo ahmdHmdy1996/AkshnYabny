@@ -40,19 +40,17 @@ export function useScoreScreen(): ScoreScreenData {
     null;
 
   // Game is over when Team B just finished the last round.
-  // At this point switchTurn() hasn't been called yet, so currentRound is
-  // still the round that just ended.
   const isGameOver = currentTurn === 'B' && currentRound >= maxRounds;
 
   const handleNextRound = () => {
-    // Only called when !isGameOver
+    // Use push (not replace) so each game screen is a fresh component instance.
+    // This prevents the old screen's hasNavigated ref from blocking Team B's turn.
     switchTurn();
     setPhase('playing');
-    router.replace('/game');
+    router.push('/game');
   };
 
   const handleCrownWinner = () => {
-    // Only called when isGameOver — no switchTurn needed, game is done
     setPhase('results');
     router.replace('/winner');
   };

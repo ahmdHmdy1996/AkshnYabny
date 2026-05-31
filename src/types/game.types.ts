@@ -1,4 +1,5 @@
-export type CategoryId = 'movies' | 'tvShows' | 'plays';
+// Category IDs match the `category` field in src/data/movies.ts
+export type CategoryId = 'movie' | 'series' | 'play';
 
 export interface Category {
   id: CategoryId;
@@ -22,6 +23,6 @@ export type GamePhase = 'setup' | 'playing' | 'roundEnd' | 'results';
 
 export interface ContentItem {
   id: string;
-  title: string;
-  categoryId: CategoryId;
+  name: string;       // was `title`
+  category: CategoryId; // was `categoryId`
 }

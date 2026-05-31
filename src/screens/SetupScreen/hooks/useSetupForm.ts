@@ -25,6 +25,12 @@ export function useSetupForm() {
     setPhase,
     isSoundEnabled,
     toggleSound,
+    gameMode,
+    setGameMode,
+    roundDuration,
+    setRoundDuration,
+    skipLimit,
+    setSkipLimit,
   } = useGameStore();
 
   const validate = (): SetupValidation => {
@@ -50,11 +56,17 @@ export function useSetupForm() {
     crazyRulesEnabled,
     maxRounds,
     isSoundEnabled,
+    gameMode,
+    roundDuration,
+    skipLimit,
     setTeamName,
     toggleCategory,
     toggleCrazyRules,
     setMaxRounds,
     toggleSound,
+    setGameMode,
+    setRoundDuration,
+    setSkipLimit,
     handleStartGame,
   };
 }
