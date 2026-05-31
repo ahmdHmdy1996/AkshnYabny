@@ -207,15 +207,9 @@ export function SetupScreen() {
             {/* ══════════════════ EXTRAS ══════════════════ */}
             <View style={styles.card}>
               <SectionHeader icon="✨" title="إضافات" />
-              <View style={styles.togglesRow}>
-                <View style={styles.toggleItem}>
-                  <SoundToggle enabled={isSoundEnabled} onToggle={toggleSound} />
-                </View>
-                <View style={styles.toggleSep} />
-                <View style={styles.toggleItem}>
-                  <RulesToggle enabled={crazyRulesEnabled} onToggle={toggleCrazyRules} />
-                </View>
-              </View>
+              <SoundToggle enabled={isSoundEnabled} onToggle={toggleSound} />
+              <View style={styles.toggleDivider} />
+              <RulesToggle enabled={crazyRulesEnabled} onToggle={toggleCrazyRules} />
             </View>
 
             {/* ══════════════════ START BUTTON ══════════════════ */}
@@ -381,18 +375,10 @@ const styles = StyleSheet.create({
   },
 
   // ── Toggles ─────────────────────────────────────────────────────────────────
-  togglesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  toggleItem: {
-    flex: 1,
-  },
-  toggleSep: {
-    width: 1,
-    height: 40,
+  toggleDivider: {
+    height: 1,
     backgroundColor: Colors.borderSubtle,
-    marginHorizontal: Spacing.sm,
+    marginVertical: Spacing.xs,
   },
 
   // ── Validation ───────────────────────────────────────────────────────────────
