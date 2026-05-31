@@ -1,22 +1,24 @@
 /**
  * GameScreen — CINEMA ROYALE edition
  *
- * Changes:
- *   • 3-2-1 countdown overlay before the round starts
+ * Features:
+ *   • Dramatic 3-2-1 countdown overlay (CountdownOverlay) before each turn
+ *   • Warning pulse animation when time ≤ 10 s
  */
 
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, StatusBar, Animated } from 'react-native';
+import { View, StyleSheet, StatusBar, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { CircularTimer }   from './components/CircularTimer';
-import { TeamTurnHeader }  from './components/TeamTurnHeader';
-import { SwipeableCard }   from './components/SwipeableCard';
-import { CrazyRuleCard }   from './components/CrazyRuleCard';
-import { ActionButtons }   from './components/ActionButtons';
-import { useGameLoop }     from './hooks/useGameLoop';
-import { Colors, Spacing } from '../../constants/theme';
+import { CircularTimer }      from './components/CircularTimer';
+import { TeamTurnHeader }     from './components/TeamTurnHeader';
+import { SwipeableCard }      from './components/SwipeableCard';
+import { CrazyRuleCard }      from './components/CrazyRuleCard';
+import { ActionButtons }      from './components/ActionButtons';
+import { CountdownOverlay }   from './components/CountdownOverlay';
+import { useGameLoop }        from './hooks/useGameLoop';
+import { Colors, Spacing }    from '../../constants/theme';
 
 export function GameScreen() {
   const {
@@ -57,20 +59,6 @@ export function GameScreen() {
     return () => warningLoop.current?.stop();
   }, [isTimeWarning, warningAnim]);
 
-  // ── Countdown number animation ───────────────────────────────────────────────
-  const countdownScale  = useRef(new Animated.Value(1.4)).current;
-  const countdownOpacity = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (countdown <= 0) return;
-    countdownScale.setValue(1.4);
-    countdownOpacity.setValue(1);
-    Animated.parallel([
-      Animated.timing(countdownScale,   { toValue: 0.6, duration: 900, useNativeDriver: true }),
-      Animated.timing(countdownOpacity, { toValue: 0,   duration: 900, useNativeDriver: true }),
-    ]).start();
-  }, [countdown]);
-
   const warningOpacity = warningAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 0.18],
@@ -80,14 +68,12 @@ export function GameScreen() {
     <View style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* ── Deep void base ─────────────────────────────────────────────────── */}
+      {/* ── Background ─────────────────────────────────────────────────────── */}
       <LinearGradient
         colors={['#04050C', '#060810', '#04050C']}
         locations={[0, 0.5, 1]}
         style={StyleSheet.absoluteFill}
       />
-
-      {/* ── Depth blob ─────────────────────────────────────────────────────── */}
       <View style={styles.depthBlob} pointerEvents="none" />
 
       {/* ── Warning crimson overlay ─────────────────────────────────────────── */}
@@ -104,7 +90,6 @@ export function GameScreen() {
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.layout}>
 
-          {/* ── Top bar ──────────────────────────────────────────────────── */}
           <View style={styles.topBar}>
             <TeamTurnHeader
               team={currentTeamData}
@@ -113,7 +98,6 @@ export function GameScreen() {
             />
           </View>
 
-          {/* ── Timer ────────────────────────────────────────────────────── */}
           <View style={styles.timerSection}>
             <CircularTimer
               timeLeft={timeLeft}
@@ -122,7 +106,6 @@ export function GameScreen() {
             />
           </View>
 
-          {/* ── Content card ─────────────────────────────────────────────── */}
           <View style={styles.cardSection}>
             <SwipeableCard
               key={currentCard?.id ?? '__empty__'}
@@ -133,14 +116,12 @@ export function GameScreen() {
             />
           </View>
 
-          {/* ── Crazy rule (conditional) ──────────────────────────────────── */}
           {crazyRule ? (
             <View style={styles.ruleSection}>
               <CrazyRuleCard rule={crazyRule} />
             </View>
           ) : null}
 
-          {/* ── Action buttons ────────────────────────────────────────────── */}
           <View style={styles.actionsSection}>
             <ActionButtons
               onSkip={handleSkip}
@@ -153,56 +134,31 @@ export function GameScreen() {
         </View>
       </SafeAreaView>
 
-      {/* ── 3-2-1 Countdown overlay ────────────────────────────────────────── */}
+      {/* ── 3-2-1 Countdown overlay (shows before every team turn) ────────── */}
       {!countdownDone && (
-        <View style={styles.countdownOverlay} pointerEvents="none">
-          <LinearGradient
-            colors={['rgba(4,5,12,0.92)', 'rgba(4,5,12,0.97)', 'rgba(4,5,12,0.92)']}
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={styles.countdownContent}>
-            <Text style={styles.countdownLabel}>ابدأ التمثيل بعد...</Text>
-            <Animated.Text
-              style={[
-                styles.countdownNumber,
-                { transform: [{ scale: countdownScale }], opacity: countdownOpacity },
-              ]}
-            >
-              {countdown}
-            </Animated.Text>
-            <Text style={styles.countdownTeam}>{currentTeamData.name}</Text>
-          </View>
-        </View>
+        <CountdownOverlay
+          countdown={countdown}
+          teamName={currentTeamData.name}
+        />
       )}
     </View>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  safe: {
-    flex: 1,
-  },
+  root:   { flex: 1, backgroundColor: Colors.background },
+  safe:   { flex: 1 },
   layout: {
     flex: 1,
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
+    paddingTop:    Spacing.md,
     paddingBottom: Spacing.md,
     gap: Spacing.md,
   },
 
   depthBlob: {
-    position: 'absolute',
-    top: '25%',
-    left: '15%',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
+    position: 'absolute', top: '25%', left: '15%',
+    width: 220, height: 220, borderRadius: 110,
     backgroundColor: 'rgba(60, 40, 160, 0.07)',
   },
 
@@ -216,43 +172,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 61, 113, 0.50)',
   } as any,
 
-  topBar: {},
-  timerSection: { alignItems: 'center' },
-  cardSection: { flex: 1, minHeight: 180 },
-  ruleSection: {},
-  actionsSection: {},
-
-  // ── Countdown overlay ──────────────────────────────────────────────────────
-  countdownOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 100,
-  },
-  countdownContent: {
-    alignItems: 'center',
-    gap: 16,
-  },
-  countdownLabel: {
-    fontSize: 18,
-    color: 'rgba(255,255,255,0.5)',
-    fontWeight: '500',
-    letterSpacing: 1,
-  },
-  countdownNumber: {
-    fontSize: 120,
-    fontWeight: '900',
-    color: '#FFD700',
-    lineHeight: 130,
-    textShadowColor: 'rgba(255, 215, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 30,
-  },
-  countdownTeam: {
-    fontSize: 22,
-    color: '#fff',
-    fontWeight: '700',
-    letterSpacing: 1,
-    marginTop: 8,
-  },
+  topBar:        {},
+  timerSection:  { alignItems: 'center' },
+  cardSection:   { flex: 1, minHeight: 180 },
+  ruleSection:   {},
+  actionsSection:{},
 });

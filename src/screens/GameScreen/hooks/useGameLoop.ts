@@ -89,12 +89,15 @@ export function useGameLoop() {
   });
 
   // ── 3-2-1 Countdown before timer starts ─────────────────────────────────────
+  // countdown:  3 → 2 → 1 → 0 ("يلا!" frame) → -1 (overlay hidden, game live)
   const [countdown, setCountdown] = useState(3);
-  const countdownDone = countdown <= 0;
+  const countdownDone = countdown < 0;
 
   useEffect(() => {
-    if (countdown <= 0) return;
-    const id = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    if (countdown < 0) return;
+    // After reaching 0 ("يلا!" frame), wait a bit longer before hiding overlay
+    const delay = countdown === 0 ? 800 : 1000;
+    const id = setTimeout(() => setCountdown((c) => c - 1), delay);
     return () => clearTimeout(id);
   }, [countdown]);
 
