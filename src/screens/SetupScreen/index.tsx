@@ -182,16 +182,11 @@ export function SetupScreen() {
             <View style={styles.card}>
               <SectionHeader icon="⚙️" title="إعدادات اللعبة" />
 
-              <View style={styles.settingsGrid}>
-                {/* Rounds */}
-                <View style={styles.settingCell}>
-                  <RoundPicker value={maxRounds} onChange={setMaxRounds} />
-                </View>
-                {/* Timer */}
-                <View style={styles.settingCell}>
-                  <TimerPicker value={roundDuration} onChange={setRoundDuration} />
-                </View>
-              </View>
+              <RoundPicker value={maxRounds} onChange={setMaxRounds} />
+
+              <Divider />
+
+              <TimerPicker value={roundDuration} onChange={setRoundDuration} />
 
               <Divider />
 
