@@ -13,6 +13,7 @@
     },
     "android": {
       "package": "com.dibootech.actionyabny",
+      "versionCode": 2,
       "softwareKeyboardLayoutMode": "pan"
     },
     "androidNavigationBar": {
